@@ -15,6 +15,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
+import android.os.Looper;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -99,7 +100,7 @@ public class MyBackgroundService extends Service {
         mChangingConfiguration = true;
     }
 
-    private void removeLocationUpdates() {
+    public void removeLocationUpdates() {
         try {
             fusedLocationProviderClient.removeLocationUpdates(locationCallback);
             Common.setRequestingLocationUpdates(this, false);
@@ -195,7 +196,17 @@ public class MyBackgroundService extends Service {
         super.onRebind(intent);
     }
 
-    private class LocalBinder extends Binder {
+    public void requestLocationUpdates() {
+        Common.setRequestingLocationUpdates(this, true);
+        startService(new Intent(getApplicationContext(), MyBackgroundService.class));
+        try {
+            fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, Looper.myLooper());
+        } catch (SecurityException ex) {
+            Log.e("M13D", "Lost location permission. Could not request it " + ex);
+        }
+    }
+
+    public class LocalBinder extends Binder {
         MyBackgroundService getService() {  return MyBackgroundService.this;    }
     }
 
